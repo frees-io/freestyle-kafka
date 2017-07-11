@@ -2,16 +2,28 @@ pgpPassphrase := Some(getEnvVar("PGP_PASSPHRASE").getOrElse("").toCharArray)
 pgpPublicRing := file(s"$gpgFolder/pubring.gpg")
 pgpSecretRing := file(s"$gpgFolder/secring.gpg")
 
-lazy val root = project.in(file("."))
+lazy val commonDependencies: Seq[ModuleID] = Seq(
+  %%("cats-core"),
+  %%("classy-config-typesafe"),
+  %%("classy-core"),
+  %%("classy-generic"),
+  %("kafka-clients"),
+  %("kafka-streams"))
+
+lazy val testDependencies: Seq[ModuleID] = Seq(
+  %%("scalatest") % "test",
+  %%("scalamockScalatest") % "test",
+  %%("scalacheck") % "test")
+
+lazy val root = project
+  .in(file("."))
   .settings(name := "freestyle-kafka")
-  .settings(moduleName := "root")
-  .settings(noPublishSettings: _*)
-  .aggregate(`freestyle-kafkaJS`, `freestyle-kafkaJVM`)
+  .settings(noPublishSettings)
+  .dependsOn(core)
+  .aggregate(core)
 
-lazy val `freestyle-kafka` = crossProject.in(file("freestyle-kafka"))
-  .settings(moduleName := "freestyle-kafka")
-  .jsSettings(sharedJsSettings: _*)
-  .crossDepSettings(commonDeps ++ freestyleCoreDeps: _*)
-
-lazy val `freestyle-kafkaJVM` = `freestyle-kafka`.jvm
-lazy val `freestyle-kafkaJS`  = `freestyle-kafka`.js
+lazy val core = project.in(file("core"))
+  .settings(moduleName := "freestyle-kafka-core")
+  .settings(scalaMetaSettings)
+  .settings(libraryDependencies ++= commonDependencies)
+  .settings(libraryDependencies ++= testDependencies)
