@@ -36,4 +36,12 @@ object KafkaDemo extends App {
       error => println(s"Left --------> ${error.toPrettyString}"),
       config => println(config)
     )
+
+  streamsConfig
+    .atPath("kafka.streams")
+    .load()
+    .fold(
+      error => println(s"Left --------> ${error.toPrettyString}"),
+      config => println(config)
+    )
 }
