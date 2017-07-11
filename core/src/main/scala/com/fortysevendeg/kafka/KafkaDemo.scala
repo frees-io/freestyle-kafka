@@ -21,6 +21,14 @@ import com.fortysevendeg.kafka.config.implicits._
 
 object KafkaDemo extends App {
 
+  consumerConfig
+    .atPath("kafka.consumer")
+    .load()
+    .fold(
+      error => println(s"Left --------> ${error.toPrettyString}"),
+      config => println(config)
+    )
+
   producerConfig
     .atPath("kafka.producer")
     .load()

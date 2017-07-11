@@ -20,7 +20,7 @@ import classy._
 import classy.config._
 import com.typesafe.config.Config
 
-package object implicits extends ProducerConfiguration {
+package object implicits extends ConsumerConfiguration with ProducerConfiguration {
 
   type ConfigValue[T] = (String, T)
 
