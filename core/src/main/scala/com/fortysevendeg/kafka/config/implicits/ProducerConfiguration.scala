@@ -22,7 +22,7 @@ import com.typesafe.config.Config
 
 trait ProducerConfiguration extends ClassyInstances {
 
-  implicit val highPriorityProducerConfig: Decoder[Config, Map[String, _]] =
+  implicit val highPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[java.util.List[String]]("bootstrap.servers")
       .join(ConfigValueDecoder[String]("acks").optional)
       .join(ConfigValueDecoder[Long]("buffer.memory").optional)
@@ -34,7 +34,7 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.truststore.location").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.password").optional)
 
-  implicit val mediumPriorityProducerConfig: Decoder[Config, Map[String, _]] =
+  implicit val mediumPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[Int]("batch.size").optional
       .join(ConfigValueDecoder[String]("client.id").optional)
       .join(ConfigValueDecoder[Long]("connections.max.idle.ms").optional)
@@ -55,7 +55,7 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.provider").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.type").optional)
 
-  implicit val lowPriorityProducerConfig: Decoder[Config, Map[String, _]] =
+  implicit val lowPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[Boolean]("enable.idempotence").optional
       .join(ConfigValueDecoder[java.util.List[String]]("interceptor.classes").optional)
       .join(ConfigValueDecoder[Int]("max.in.flight.requests.per.connection").optional)

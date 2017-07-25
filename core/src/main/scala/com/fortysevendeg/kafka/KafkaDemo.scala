@@ -16,8 +16,15 @@
 
 package com.fortysevendeg.kafka
 
+import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
+
 import classy.config._
 import com.fortysevendeg.kafka.config.implicits._
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.common.serialization.StringSerializer
+
+import scala.collection.JavaConverters._
 
 object KafkaDemo extends App {
 
@@ -25,7 +32,7 @@ object KafkaDemo extends App {
     .atPath("kafka.consumer")
     .load()
     .fold(
-      error => println(s"Left --------> ${error.toPrettyString}"),
+      error => println(error.toPrettyString),
       config => println(config)
     )
 
@@ -33,15 +40,28 @@ object KafkaDemo extends App {
     .atPath("kafka.producer")
     .load()
     .fold(
-      error => println(s"Left --------> ${error.toPrettyString}"),
-      config => println(config)
+      error => println(error.toPrettyString),
+      config => {
+        println(config)
+        val producer = new KafkaProducer[String, String](
+          config.asJava,
+          new StringSerializer,
+          new StringSerializer)
+
+        val metadata = producer
+          .send(new ProducerRecord("freestyle", s"Hello world at ${LocalDateTime.now.toString}!"))
+          .get(5, TimeUnit.SECONDS)
+        println(s"Partition: ${metadata.partition}")
+        println(s"Offset: ${metadata.offset}")
+        println(s"Timestamp: ${metadata.timestamp}")
+      }
     )
 
   streamsConfig
     .atPath("kafka.streams")
     .load()
     .fold(
-      error => println(s"Left --------> ${error.toPrettyString}"),
+      error => println(error.toPrettyString),
       config => println(config)
     )
 }

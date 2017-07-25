@@ -19,6 +19,7 @@ lazy val root = project
   .in(file("."))
   .settings(name := "freestyle-kafka")
   .settings(noPublishSettings)
+  .settings(scalaMetaSettings)
   .dependsOn(core)
   .aggregate(core)
 

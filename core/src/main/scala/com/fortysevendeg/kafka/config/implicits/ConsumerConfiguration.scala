@@ -22,7 +22,7 @@ import com.typesafe.config.Config
 
 trait ConsumerConfiguration extends ClassyInstances {
 
-  implicit val highPriorityConsumerConfig: Decoder[Config, Map[String, _]] =
+  implicit val highPriorityConsumerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[java.util.List[String]]("bootstrap.servers")
       .join(ConfigValueDecoder[Int]("fetch.min.bytes").optional)
       .join(ConfigValueDecoder[String]("group.id").optional)
@@ -35,7 +35,7 @@ trait ConsumerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.truststore.location").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.password").optional)
 
-  implicit val mediumPriorityConsumerConfig: Decoder[Config, Map[String, _]] =
+  implicit val mediumPriorityConsumerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[String]("auto.offset.reset").optional
       .join(ConfigValueDecoder[Long]("connections.max.idle.ms").optional)
       .join(ConfigValueDecoder[Boolean]("enable.auto.commit").optional)
@@ -58,7 +58,7 @@ trait ConsumerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.provider").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.type").optional)
 
-  implicit val lowPriorityConsumerConfig: Decoder[Config, Map[String, _]] =
+  implicit val lowPriorityConsumerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[Int]("auto.commit.interval.ms").optional
       .join(ConfigValueDecoder[Boolean]("check.crcs").optional)
       .join(ConfigValueDecoder[String]("client.id").optional)

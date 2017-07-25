@@ -25,13 +25,13 @@ import scala.collection.JavaConverters._
 
 trait ClassyInstances {
 
-  implicit def joinOpt2Map[K, A, B]: Join.Aux[(K, A), Option[(K, B)], Map[K, _]] =
+  implicit def joinOpt2Map[K, A, B]: Join.Aux[(K, A), Option[(K, B)], Map[K, Any]] =
     instance((a, b) => List(a).toMap ++ b.toList.toMap)
 
-  implicit def joinOptOpt2Map[K, A, B]: Join.Aux[Option[(K, A)], Option[(K, B)], Map[K, _]] =
+  implicit def joinOptOpt2Map[K, A, B]: Join.Aux[Option[(K, A)], Option[(K, B)], Map[K, Any]] =
     instance((a, b) => a.toList.toMap ++ b.toList.toMap)
 
-  implicit def joinMapOpt2Map[K, A]: Join.Aux[Map[K, _], Option[(K, A)], Map[K, _]] =
+  implicit def joinMapOpt2Map[K, A]: Join.Aux[Map[K, _], Option[(K, A)], Map[K, Any]] =
     instance((a, b) => a ++ b.toList.toMap)
 
   implicit def javaListRead(

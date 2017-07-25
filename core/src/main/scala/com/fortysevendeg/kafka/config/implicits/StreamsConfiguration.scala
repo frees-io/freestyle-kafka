@@ -22,13 +22,13 @@ import com.typesafe.config.Config
 
 trait StreamsConfiguration extends ClassyInstances {
 
-  implicit val highPriorityStreamsConfig: Decoder[Config, Map[String, _]] =
+  implicit val highPriorityStreamsConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[java.util.List[String]]("bootstrap.servers")
       .join(ConfigValueDecoder[String]("application.id").optional)
       .join(ConfigValueDecoder[Int]("replication.factor").optional)
       .join(ConfigValueDecoder[String]("state.dir").optional)
 
-  implicit val mediumPriorityStreamsConfig: Decoder[Config, Map[String, _]] =
+  implicit val mediumPriorityStreamsConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[Long]("cache.max.bytes.buffering").optional
       .join(ConfigValueDecoder[String]("client.id").optional)
       .join(ConfigValueDecoder[String]("default.key.serde").optional)
@@ -39,7 +39,7 @@ trait StreamsConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("processing.guarantee").optional)
       .join(ConfigValueDecoder[String]("security.protocol").optional)
 
-  implicit val lowPriorityStreamsConfig: Decoder[Config, Map[String, _]] =
+  implicit val lowPriorityStreamsConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[String]("application.server").optional
       .join(ConfigValueDecoder[Int]("buffered.records.per.partition").optional)
       .join(ConfigValueDecoder[Long]("commit.interval.ms").optional)
