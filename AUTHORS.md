@@ -10,4 +10,5 @@ The maintainers of the project are:
 
 These are the people that have contributed to the freestyle-kafka project:
 
+* Francisco Diaz <[franciscodr](https://github.com/franciscodr)>
 * Juan Pedro Moreno <[juanpedromoreno](https://github.com/juanpedromoreno)>
