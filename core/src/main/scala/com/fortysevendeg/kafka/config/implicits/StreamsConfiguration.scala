@@ -16,7 +16,9 @@
 
 package com.fortysevendeg.kafka.config.implicits
 
+import cats.implicits._
 import classy._
+import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
 
@@ -65,11 +67,8 @@ trait StreamsConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[Long]("windowstore.changelog.additional.retention.ms").optional)
       .join(ConfigValueDecoder[String]("zookeeper.connect").optional)
 
-  implicit val streamsConfig: Decoder[Config, Map[String, AnyRef]] = {
-    for {
-      highConf        <- highPriorityStreamsConfig
-      mediumConf      <- mediumPriorityStreamsConfig
-      lowPriorityConf <- lowPriorityStreamsConfig
-    } yield highConf ++ mediumConf ++ lowPriorityConf
-  }.map(_.asInstanceOf[Map[String, AnyRef]])
+  implicit val streamsConfig: Decoder[Config, Map[String, Any]] =
+    (highPriorityStreamsConfig |@|
+      mediumPriorityStreamsConfig |@|
+      lowPriorityStreamsConfig) map (_ ++ _ ++ _)
 }

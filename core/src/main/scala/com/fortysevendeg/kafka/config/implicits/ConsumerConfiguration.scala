@@ -16,7 +16,9 @@
 
 package com.fortysevendeg.kafka.config.implicits
 
+import cats.implicits._
 import classy._
+import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
 
@@ -82,11 +84,8 @@ trait ConsumerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.secure.random.implementation").optional)
       .join(ConfigValueDecoder[String]("ssl.trustmanager.algorithm").optional)
 
-  implicit val consumerConfig: Decoder[Config, Map[String, AnyRef]] = {
-    for {
-      highConf        <- highPriorityConsumerConfig
-      mediumConf      <- mediumPriorityConsumerConfig
-      lowPriorityConf <- lowPriorityConsumerConfig
-    } yield highConf ++ mediumConf ++ lowPriorityConf
-  }.map(_.asInstanceOf[Map[String, AnyRef]])
+  implicit val consumerConfig: Decoder[Config, Map[String, Any]] =
+    (highPriorityConsumerConfig |@|
+      mediumPriorityConsumerConfig |@|
+      lowPriorityConsumerConfig) map (_ ++ _ ++ _)
 }

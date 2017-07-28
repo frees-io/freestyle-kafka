@@ -16,7 +16,9 @@
 
 package com.fortysevendeg.kafka.config.implicits
 
+import cats.implicits._
 import classy._
+import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
 
@@ -79,11 +81,8 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[Int]("transaction.timeout.ms").optional)
       .join(ConfigValueDecoder[String]("transactional.id").optional)
 
-  implicit val producerConfig: Decoder[Config, Map[String, AnyRef]] = {
-    for {
-      highConf        <- highPriorityProducerConfig
-      mediumConf      <- mediumPriorityProducerConfig
-      lowPriorityConf <- lowPriorityProducerConfig
-    } yield highConf ++ mediumConf ++ lowPriorityConf
-  }.map(_.asInstanceOf[Map[String, AnyRef]])
+  implicit val producerConfig: Decoder[Config, Map[String, Any]] =
+    (highPriorityProducerConfig |@|
+      mediumPriorityProducerConfig |@|
+      lowPriorityProducerConfig) map (_ ++ _ ++ _)
 }
