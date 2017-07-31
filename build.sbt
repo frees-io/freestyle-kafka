@@ -6,7 +6,7 @@ lazy val commonDependencies: Seq[ModuleID] = Seq(
   %%("cats-core"),
   %%("classy-cats"),
   %%("classy-config-typesafe"),
-  %%("freestyle"),
+  %%("freestyle-async"),
   %%("classy-generic"),
   %("kafka-clients"),
   %("kafka-streams"))
