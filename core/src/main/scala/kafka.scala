@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package com.fortysevendeg.kafka.config
+package freestyle
 
-import classy._
-import classy.config._
-import com.typesafe.config.Config
+package object kafka {
 
-package object implicits
-    extends ConsumerConfiguration
-    with ProducerConfiguration
-    with StreamsConfiguration {
-
-  type ConfigValue[T] = (String, T)
-
-  object ConfigValueDecoder {
-    def apply[T](key: String)(implicit R: Read[Config, T]): ConfigDecoder[ConfigValue[T]] =
-      R.read(key) map (value => (key, value))
-  }
+  type Topic = String
 
 }

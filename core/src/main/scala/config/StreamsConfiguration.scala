@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package com.fortysevendeg.kafka.config.implicits
+package freestyle
+package kafka
 
 import cats.implicits._
 import classy._
 import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
+import freestyle.kafka.config.ConfigValueDecoder
 
 trait StreamsConfiguration extends ClassyInstances {
 

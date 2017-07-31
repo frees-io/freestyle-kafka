@@ -14,39 +14,38 @@
  * limitations under the License.
  */
 
-package com.fortysevendeg.kafka.config.implicits
+package freestyle
+package kafka
 
 import cats.implicits._
 import classy._
 import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
+import freestyle.kafka.config.ConfigValueDecoder
 
-trait ConsumerConfiguration extends ClassyInstances {
+trait ProducerConfiguration extends ClassyInstances {
 
-  implicit val highPriorityConsumerConfig: Decoder[Config, Map[String, Any]] =
+  implicit val highPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[java.util.List[String]]("bootstrap.servers")
-      .join(ConfigValueDecoder[Int]("fetch.min.bytes").optional)
-      .join(ConfigValueDecoder[String]("group.id").optional)
-      .join(ConfigValueDecoder[Int]("heartbeat.interval.ms").optional)
-      .join(ConfigValueDecoder[Int]("max.partition.fetch.bytes").optional)
-      .join(ConfigValueDecoder[Int]("session.timeout.ms").optional)
+      .join(ConfigValueDecoder[String]("acks").optional)
+      .join(ConfigValueDecoder[Long]("buffer.memory").optional)
+      .join(ConfigValueDecoder[String]("compression.type").optional)
+      .join(ConfigValueDecoder[Int]("retries").optional)
       .join(ConfigValueDecoder[String]("ssl.key.password").optional)
       .join(ConfigValueDecoder[String]("ssl.keystore.location").optional)
       .join(ConfigValueDecoder[String]("ssl.keystore.password").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.location").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.password").optional)
 
-  implicit val mediumPriorityConsumerConfig: Decoder[Config, Map[String, Any]] =
-    ConfigValueDecoder[String]("auto.offset.reset").optional
+  implicit val mediumPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
+    ConfigValueDecoder[Int]("batch.size").optional
+      .join(ConfigValueDecoder[String]("client.id").optional)
       .join(ConfigValueDecoder[Long]("connections.max.idle.ms").optional)
-      .join(ConfigValueDecoder[Boolean]("enable.auto.commit").optional)
-      .join(ConfigValueDecoder[Boolean]("exclude.internal.topics").optional)
-      .join(ConfigValueDecoder[Int]("fetch.max.bytes").optional)
-      .join(ConfigValueDecoder[String]("isolation.level").optional)
-      .join(ConfigValueDecoder[Int]("max.poll.interval.ms").optional)
-      .join(ConfigValueDecoder[Int]("max.poll.records").optional)
-      .join(ConfigValueDecoder[java.util.List[String]]("partition.assignment.strategy").optional)
+      .join(ConfigValueDecoder[Long]("linger.ms").optional)
+      .join(ConfigValueDecoder[Long]("max.block.ms").optional)
+      .join(ConfigValueDecoder[Int]("max.request.size").optional)
+      .join(ConfigValueDecoder[String]("partitioner.class").optional)
       .join(ConfigValueDecoder[Int]("receive.buffer.bytes").optional)
       .join(ConfigValueDecoder[Int]("request.timeout.ms").optional)
       .join(ConfigValueDecoder[String]("sasl.jaas.config").optional)
@@ -60,12 +59,10 @@ trait ConsumerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.provider").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.type").optional)
 
-  implicit val lowPriorityConsumerConfig: Decoder[Config, Map[String, Any]] =
-    ConfigValueDecoder[Int]("auto.commit.interval.ms").optional
-      .join(ConfigValueDecoder[Boolean]("check.crcs").optional)
-      .join(ConfigValueDecoder[String]("client.id").optional)
-      .join(ConfigValueDecoder[Int]("fetch.max.wait.ms").optional)
+  implicit val lowPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
+    ConfigValueDecoder[Boolean]("enable.idempotence").optional
       .join(ConfigValueDecoder[java.util.List[String]]("interceptor.classes").optional)
+      .join(ConfigValueDecoder[Int]("max.in.flight.requests.per.connection").optional)
       .join(ConfigValueDecoder[Long]("metadata.max.age.ms").optional)
       .join(ConfigValueDecoder[java.util.List[String]]("metric.reporters").optional)
       .join(ConfigValueDecoder[Int]("metrics.num.samples").optional)
@@ -83,9 +80,11 @@ trait ConsumerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.keymanager.algorithm").optional)
       .join(ConfigValueDecoder[String]("ssl.secure.random.implementation").optional)
       .join(ConfigValueDecoder[String]("ssl.trustmanager.algorithm").optional)
+      .join(ConfigValueDecoder[Int]("transaction.timeout.ms").optional)
+      .join(ConfigValueDecoder[String]("transactional.id").optional)
 
-  implicit val consumerConfig: Decoder[Config, Map[String, Any]] =
-    (highPriorityConsumerConfig |@|
-      mediumPriorityConsumerConfig |@|
-      lowPriorityConsumerConfig) map (_ ++ _ ++ _)
+  implicit val producerConfig: Decoder[Config, Map[String, Any]] =
+    (highPriorityProducerConfig |@|
+      mediumPriorityProducerConfig |@|
+      lowPriorityProducerConfig) map (_ ++ _ ++ _)
 }
