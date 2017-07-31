@@ -14,7 +14,10 @@ lazy val commonDependencies: Seq[ModuleID] = Seq(
 lazy val testDependencies: Seq[ModuleID] = Seq(
   %%("scalatest") % "test",
   %%("scalamockScalatest") % "test",
-  %%("scalacheck") % "test")
+  %%("scalacheck") % "test",
+  "net.manub" %% "scalatest-embedded-kafka" % "0.15.0" % "test",
+  "net.manub" %% "scalatest-embedded-kafka-streams" % "0.15.0" % "test"
+)
 
 lazy val root = project
   .in(file("."))
