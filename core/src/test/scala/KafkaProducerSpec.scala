@@ -14,16 +14,41 @@
  * limitations under the License.
  */
 
-import net.manub.embeddedkafka.EmbeddedKafka
-import org.scalatest.WordSpec
+package freestyle
+package kafka
 
-class KafkaProducerSpec extends WordSpec with EmbeddedKafka {
+import cats.implicits._
+import classy.Decoder
+import com.typesafe.config.{Config, ConfigFactory}
+import freestyle.async.implicits._
+import org.apache.kafka.common.serialization.StringSerializer
+import org.scalatest.{AsyncWordSpec, Matchers}
 
-  "runs with embedded kafka" should {
+import scala.concurrent.{ExecutionContext, Future}
 
-    withRunningKafka {
-      // ... code goes here
-    }
+class KafkaProducerSpec extends AsyncWordSpec with Matchers with FSKafkaAlgebraSpec {
+
+  override implicit def executionContext: ExecutionContext =
+    scala.concurrent.ExecutionContext.Implicits.global
+
+  "runs with embedded kafka" in {
+
+    withProducer[String, String, Future].inProgram { producer =>
+      FreeS.pure(())
+    }.futureValue shouldBe (())
+
+  }
+
+  "Producer can be reused after closed" in {
+
+    withProducer[String, String, Future].inProgram { producer =>
+      for {
+        _                 <- producer.close()
+        isClosed          <- producer.isClosed
+        _                 <- producer.metrics
+        isClosedAfterUsed <- producer.isClosed
+      } yield (isClosed, isClosedAfterUsed)
+    }.futureValue shouldBe ((true, false))
 
   }
 

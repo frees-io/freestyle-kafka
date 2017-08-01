@@ -16,8 +16,32 @@
 
 package freestyle
 
+import classy.Read
+import classy.config.ConfigDecoder
+import com.typesafe.config.Config
+import org.apache.kafka.clients.producer.ProducerRecord
+
 package object kafka {
 
-  type Topic = String
+  type ConfigValue[T] = (String, T)
+  type Topic          = String
+
+  object ConfigValueDecoder {
+    def apply[T](key: String)(implicit R: Read[Config, T]): ConfigDecoder[ConfigValue[T]] =
+      R.read(key) map (value => (key, value))
+  }
+
+  implicit class TupleSyntax[K, V](val t: (K, V)) extends AnyVal {
+    def producerRecord(topic: Topic): ProducerRecord[K, V] =
+      new ProducerRecord[K, V](topic, t._1, t._2)
+  }
+
+  trait Implicits
+      extends ConsumerConfiguration
+      with ProducerConfiguration
+      with StreamsConfiguration
+      with DefaultSerializers
+
+  object implicits extends Implicits
 
 }

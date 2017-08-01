@@ -22,7 +22,7 @@ import classy._
 import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
-import freestyle.kafka.config.ConfigValueDecoder
+import org.apache.kafka.common.serialization.Serializer
 
 trait ProducerConfiguration extends ClassyInstances {
 
@@ -38,7 +38,7 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.truststore.location").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.password").optional)
 
-  implicit val mediumPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
+  val mediumPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[Int]("batch.size").optional
       .join(ConfigValueDecoder[String]("client.id").optional)
       .join(ConfigValueDecoder[Long]("connections.max.idle.ms").optional)
@@ -59,7 +59,7 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.provider").optional)
       .join(ConfigValueDecoder[String]("ssl.truststore.type").optional)
 
-  implicit val lowPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
+  val lowPriorityProducerConfig: Decoder[Config, Map[String, Any]] =
     ConfigValueDecoder[Boolean]("enable.idempotence").optional
       .join(ConfigValueDecoder[java.util.List[String]]("interceptor.classes").optional)
       .join(ConfigValueDecoder[Int]("max.in.flight.requests.per.connection").optional)
@@ -83,8 +83,12 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[Int]("transaction.timeout.ms").optional)
       .join(ConfigValueDecoder[String]("transactional.id").optional)
 
-  implicit val producerConfig: Decoder[Config, Map[String, Any]] =
+  implicit def freestyleKafkaProducerConfig[K, V](
+      implicit KS: Serializer[K],
+      VS: Serializer[V]): Decoder[Config, KafkaProducerConfig[K, V]] =
     (highPriorityProducerConfig |@|
       mediumPriorityProducerConfig |@|
-      lowPriorityProducerConfig) map (_ ++ _ ++ _)
+      lowPriorityProducerConfig).map(_ ++ _ ++ _).map { config =>
+      KafkaProducerConfig(config, Option((KS, VS)))
+    }
 }

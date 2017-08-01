@@ -37,6 +37,8 @@ object producer {
     @free
     trait Producer {
 
+      def isClosed: FS[Boolean]
+
       def close(): FS[Unit]
 
       def closeWaitingFor(timeout: Duration): FS[Unit]
@@ -49,7 +51,11 @@ object producer {
 
       def send(record: ProducerRecord[K, V]): FS[RecordMetadata]
 
+      def sendToTopic(topic: Topic, record: (K, V)): FS[RecordMetadata]
+
       def sendMany(records: List[ProducerRecord[K, V]]): FS[List[RecordMetadata]]
+
+      def sendManyToTopic(topic: Topic, records: List[(K, V)]): FS[List[RecordMetadata]]
 
       def initTransaction(): FS[Unit]
 
@@ -85,9 +91,14 @@ object producer {
         atomicProducer.get()
       }
 
+      override protected[this] def isClosed: M[Boolean] =
+        producerClosedState.get().pure[M]
+
       override protected[this] def close: M[Unit] = {
-        producerClosedState.set(false)
-        ME.catchNonFatal(producer.close())
+        ME.catchNonFatal(producer.close()).map { _ =>
+          producerClosedState.set(true)
+          ()
+        }
       }
 
       override protected[this] def closeWaitingFor(timeout: Duration): M[Unit] = {
@@ -111,6 +122,14 @@ object producer {
           })
         }
 
+      override protected[this] def sendToTopic(topic: Topic, record: (K, V)): M[RecordMetadata] =
+        send(record.producerRecord(topic))
+
+      override protected[this] def sendManyToTopic(
+          topic: Topic,
+          records: List[(K, V)]): M[List[RecordMetadata]] =
+        sendMany(records.map(_.producerRecord(topic)))
+
       override protected[this] def sendMany(
           records: List[ProducerRecord[K, V]]): M[List[RecordMetadata]] =
         records.traverse(send)
@@ -132,6 +151,17 @@ object producer {
       override protected[this] def abortTransaction: M[Unit] =
         ME.catchNonFatal(producer.abortTransaction())
     }
+
+    trait Implicits {
+
+      implicit def defaultKafkaProducerHandler[M[_]](
+          implicit config: KafkaProducerConfig[K, V],
+          ctx: AsyncContext[M],
+          ME: MonadError[M, Throwable]): KafkaProducerHandler[M] = new KafkaProducerHandler[M]
+
+    }
+
+    object implicits extends Implicits
 
   }
 

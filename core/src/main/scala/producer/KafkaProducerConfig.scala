@@ -22,15 +22,18 @@ import org.apache.kafka.common.serialization.Serializer
 import collection.JavaConverters._
 
 case class KafkaProducerConfig[K, V](
-    configs: Map[String, AnyRef],
+    configs: Map[String, Any],
     keyValueSerializers: Option[(Serializer[K], Serializer[V])])
 
 object KafkaProducerConfig {
 
+  private def toAnyRefMap(m: Map[String, Any]): java.util.Map[String, AnyRef] =
+    m.asInstanceOf[Map[String, AnyRef]].asJava
+
   def producerFromConfig[K, V](config: KafkaProducerConfig[K, V]): KafkaProducer[K, V] =
-    config.keyValueSerializers.fold(new KafkaProducer[K, V](config.configs.asJava)) {
+    config.keyValueSerializers.fold(new KafkaProducer[K, V](toAnyRefMap(config.configs))) {
       case (ks, vs) =>
-        new KafkaProducer[K, V](config.configs.asJava, ks, vs)
+        new KafkaProducer[K, V](toAnyRefMap(config.configs), ks, vs)
     }
 
 }

@@ -22,7 +22,6 @@ import classy._
 import classy.cats._
 import classy.config._
 import com.typesafe.config.Config
-import freestyle.kafka.config.ConfigValueDecoder
 
 trait StreamsConfiguration extends ClassyInstances {
 

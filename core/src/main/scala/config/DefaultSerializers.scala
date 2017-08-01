@@ -17,20 +17,10 @@
 package freestyle
 package kafka
 
-import classy._
-import classy.config._
-import com.typesafe.config.Config
+import org.apache.kafka.common.serialization.{Serializer, StringSerializer}
 
-package object config
-    extends ConsumerConfiguration
-    with ProducerConfiguration
-    with StreamsConfiguration {
+trait DefaultSerializers {
 
-  type ConfigValue[T] = (String, T)
-
-  object ConfigValueDecoder {
-    def apply[T](key: String)(implicit R: Read[Config, T]): ConfigDecoder[ConfigValue[T]] =
-      R.read(key) map (value => (key, value))
-  }
+  implicit val StringSerializer: Serializer[String] = new StringSerializer()
 
 }
