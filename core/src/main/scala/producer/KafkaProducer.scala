@@ -72,20 +72,20 @@ object producer {
     }
 
     class KafkaProducerHandler[M[_]](
-        implicit config: KafkaProducerConfig[K, V],
+        implicit underlying: UnderlyingKafkaProducer[K, V],
         ctx: AsyncContext[M],
         ME: MonadError[M, Throwable])
         extends Producer.Handler[M] {
 
-      private lazy val atomicProducer: AtomicReference[KafkaProducer[K, V]] =
-        new AtomicReference(KafkaProducerConfig.producerFromConfig(config))
+      private val atomicProducer: AtomicReference[KafkaProducer[K, V]] =
+        new AtomicReference(underlying.producer)
 
-      private lazy val producerClosedState: AtomicReference[Boolean] =
+      private val producerClosedState: AtomicReference[Boolean] =
         new AtomicReference(false)
 
       def producer: KafkaProducer[K, V] = {
         if (producerClosedState.get()) {
-          atomicProducer.set(KafkaProducerConfig.producerFromConfig(config))
+          atomicProducer.set(underlying.producer)
           producerClosedState.set(false)
         }
         atomicProducer.get()
@@ -102,8 +102,10 @@ object producer {
       }
 
       override protected[this] def closeWaitingFor(timeout: Duration): M[Unit] = {
-        producerClosedState.set(false)
-        ME.catchNonFatal(producer.close(timeout.toNanos, TimeUnit.NANOSECONDS))
+        ME.catchNonFatal(producer.close(timeout.toNanos, TimeUnit.NANOSECONDS)).map { _ =>
+          producerClosedState.set(true)
+          ()
+        }
       }
 
       override protected[this] def flush: M[Unit] = ME.catchNonFatal(producer.flush())
@@ -114,13 +116,15 @@ object producer {
       override protected[this] def partitionsFor(topic: Topic): M[List[PartitionInfo]] =
         ME.catchNonFatal(producer.partitionsFor(topic).asScala.toList)
 
-      override protected[this] def send(record: ProducerRecord[K, V]): M[RecordMetadata] =
+      override protected[this] def send(record: ProducerRecord[K, V]): M[RecordMetadata] = {
         ctx.runAsync { cb =>
-          producer.send(record, (metadata: RecordMetadata, exception: Exception) => {
-            if (exception == null) cb(Right(metadata))
-            else cb(Left(exception))
-          })
+          producer
+            .send(record, (metadata: RecordMetadata, exception: Exception) => {
+              if (exception == null) cb(Right(metadata))
+              else cb(Left(exception))
+            })
         }
+      }
 
       override protected[this] def sendToTopic(topic: Topic, record: (K, V)): M[RecordMetadata] =
         send(record.producerRecord(topic))
@@ -155,7 +159,7 @@ object producer {
     trait Implicits {
 
       implicit def defaultKafkaProducerHandler[M[_]](
-          implicit config: KafkaProducerConfig[K, V],
+          implicit underlying: UnderlyingKafkaProducer[K, V],
           ctx: AsyncContext[M],
           ME: MonadError[M, Throwable]): KafkaProducerHandler[M] = new KafkaProducerHandler[M]
 
@@ -167,4 +171,8 @@ object producer {
 
   def apply[K, V] = new KafkaProducerProvider[K, V]
 
+}
+
+trait UnderlyingKafkaProducer[K, V] {
+  def producer: KafkaProducer[K, V]
 }

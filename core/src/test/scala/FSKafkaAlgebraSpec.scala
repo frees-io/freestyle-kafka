@@ -18,56 +18,66 @@ package freestyle
 package kafka
 
 import cats.MonadError
-import classy.Decoder
-import com.typesafe.config.{Config, ConfigFactory}
-import freestyle.async.AsyncContext
-import net.manub.embeddedkafka.EmbeddedKafka
+import cats.implicits._
+import freestyle.async.{AsyncContext, Proc}
+import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
+import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.Serializer
-import org.scalatest.{ParallelTestExecution, Suite}
+import org.scalatest._
 import org.scalatest.concurrent.{ScalaFutures, Waiters}
 
-trait FSKafkaAlgebraSpec extends EmbeddedKafka with ScalaFutures with Waiters with Implicits {
-  self: Suite =>
+import scala.concurrent.Promise
+import scala.util.Try
 
-  class withProducer[K, V, M[_]](
-      implicit ME: MonadError[M, Throwable],
-      AM: AsyncContext[M],
-      KD: Serializer[K],
-      VS: Serializer[V]) {
+trait FSKafkaAlgebraSpec
+    extends EmbeddedKafka
+    with Waiters
+    with ScalaFutures
+    with Matchers
+    with Implicits { self: Suite =>
 
-    type ProducerType = producer.KafkaProducerProvider[K, V]#Producer[p.Producer.Op]
+  type Target[A] = Either[Throwable, A]
 
-    implicit val producerDecoderconfig: Decoder[Config, KafkaProducerConfig[K, V]] =
-      freestyleKafkaProducerConfig[K, V]
+  implicit val eitherTestAsyncContext: AsyncContext[Target] = new AsyncContext[Target] {
+    override def runAsync[A](fa: Proc[A]): Target[A] = {
+      val p = Promise[A]()
+      fa(_.fold(p.tryFailure, p.trySuccess))
+      Try(p.future.futureValue).toEither
+    }
+  }
 
-    lazy val producerConfig = ConfigFactory.load().getConfig("kafka.producer")
+  class withProducer[V](implicit VS: Serializer[V]) {
 
-    implicit val kafkaProducerConfig: KafkaProducerConfig[K, V] =
-      Decoder[Config, KafkaProducerConfig[K, V]]
-        .decode(producerConfig)
-        .fold(e => throw new RuntimeException(e.toPrettyString), { t =>
-          t
-        })
+    type ProducerType = producer.KafkaProducerProvider[String, V]#Producer[p.Producer.Op]
 
-    val p    = producer[K, V]
-    val prod = p.Producer[p.Producer.Op]
+    val p: producer.KafkaProducerProvider[String, V] = producer[String, V]
+    val prod: p.Producer[p.Producer.Op]              = p.Producer[p.Producer.Op]
 
-    def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): M[A] = {
+//    val embeddedKafkaConfig: EmbeddedKafkaConfig =
+//      EmbeddedKafkaConfig(kafkaPort = 0, zooKeeperPort = 0)
+
+    //customBrokerProperties = Map("advertised.port" -> "", "advertised.host.name" -> "localhost")
+
+    def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] =
       withRunningKafka {
+        // println(s"actualConfig: $actualConfig")
         val program = body(prod)
         import freestyle._
-        program.interpret[M](ME, p.implicits.defaultKafkaProducerHandler[M])
+        implicit def kafkaProducer: UnderlyingKafkaProducer[String, V] =
+          new UnderlyingKafkaProducer[String, V] {
+            override def producer: KafkaProducer[String, V] =
+              aKafkaProducer.thatSerializesValuesWith(VS.getClass)
+          }
+        val f = program.interpret[Target](
+          MonadError[Target, Throwable],
+          p.implicits.defaultKafkaProducerHandler[Target])
+        f
       }
-    }
 
   }
 
   object withProducer {
-    def apply[K, V, M[_]](
-        implicit ME: MonadError[M, Throwable],
-        AM: AsyncContext[M],
-        KD: Serializer[K],
-        VS: Serializer[V]) = new withProducer[K, V, M]()
+    def apply[V](implicit VS: Serializer[V]) = new withProducer[V]()
   }
 
 }

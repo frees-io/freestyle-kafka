@@ -24,6 +24,9 @@ import collection.JavaConverters._
 case class KafkaProducerConfig[K, V](
     configs: Map[String, Any],
     keyValueSerializers: Option[(Serializer[K], Serializer[V])])
+    extends UnderlyingKafkaProducer[K, V] {
+  override def producer: KafkaProducer[K, V] = KafkaProducerConfig.producerFromConfig(this)
+}
 
 object KafkaProducerConfig {
 

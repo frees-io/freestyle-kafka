@@ -12,11 +12,14 @@ lazy val commonDependencies: Seq[ModuleID] = Seq(
   %("kafka-streams"))
 
 lazy val testDependencies: Seq[ModuleID] = Seq(
-  %%("scalatest") % "test",
+  %%("scalatest")          % "test",
   %%("scalamockScalatest") % "test",
-  %%("scalacheck") % "test",
-  "net.manub" %% "scalatest-embedded-kafka" % "0.15.0" % "test",
-  "net.manub" %% "scalatest-embedded-kafka-streams" % "0.15.0" % "test"
+  %%("scalacheck")         % "test",
+  "org.slf4j"              % "slf4j-api" % "1.7.21" % "test",
+  "org.slf4j"              % "log4j-over-slf4j" % "1.7.21" % "test",
+  "ch.qos.logback"         % "logback-classic" % "1.1.3" % "test",
+  "net.manub"              %% "scalatest-embedded-kafka" % "0.15.0" % "test",
+  "net.manub"              %% "scalatest-embedded-kafka-streams" % "0.15.0" % "test"
 )
 
 lazy val root = project
@@ -27,8 +30,10 @@ lazy val root = project
   .dependsOn(core)
   .aggregate(core)
 
-lazy val core = project.in(file("core"))
+lazy val core = project
+  .in(file("core"))
   .settings(moduleName := "freestyle-kafka-core")
   .settings(scalaMetaSettings)
+  .settings(parallelExecution in Test := false)
   .settings(libraryDependencies ++= commonDependencies)
   .settings(libraryDependencies ++= testDependencies)

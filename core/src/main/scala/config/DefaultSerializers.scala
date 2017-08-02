@@ -17,10 +17,21 @@
 package freestyle
 package kafka
 
-import org.apache.kafka.common.serialization.{Serializer, StringSerializer}
+import org.apache.kafka.common.serialization.{
+  Deserializer,
+  Serializer,
+  StringDeserializer,
+  StringSerializer
+}
 
 trait DefaultSerializers {
 
   implicit val StringSerializer: Serializer[String] = new StringSerializer()
+
+}
+
+trait DefaultDeserializers {
+
+  implicit val StringDeserializer: Deserializer[String] = new StringDeserializer()
 
 }

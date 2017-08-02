@@ -17,39 +17,42 @@
 package freestyle
 package kafka
 
-import cats.implicits._
-import classy.Decoder
-import com.typesafe.config.{Config, ConfigFactory}
-import freestyle.async.implicits._
-import org.apache.kafka.common.serialization.StringSerializer
-import org.scalatest.{AsyncWordSpec, Matchers}
+import net.manub.embeddedkafka.EmbeddedKafka
+import org.scalatest.WordSpec
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
-class KafkaProducerSpec extends AsyncWordSpec with Matchers with FSKafkaAlgebraSpec {
-
-  override implicit def executionContext: ExecutionContext =
-    scala.concurrent.ExecutionContext.Implicits.global
-
-  "runs with embedded kafka" in {
-
-    withProducer[String, String, Future].inProgram { producer =>
-      FreeS.pure(())
-    }.futureValue shouldBe (())
-
-  }
+class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
 
   "Producer can be reused after closed" in {
-
-    withProducer[String, String, Future].inProgram { producer =>
+    withProducer[String].inProgram { producer =>
       for {
         _                 <- producer.close()
         isClosed          <- producer.isClosed
         _                 <- producer.metrics
         isClosedAfterUsed <- producer.isClosed
       } yield (isClosed, isClosedAfterUsed)
-    }.futureValue shouldBe ((true, false))
+    } shouldBe Right((true, false))
+  }
 
+  "Producer can be reused after closed with a timeout" in {
+    withProducer[String].inProgram { producer =>
+      for {
+        _                 <- producer.closeWaitingFor(5.seconds)
+        isClosed          <- producer.isClosed
+        _                 <- producer.metrics
+        isClosedAfterUsed <- producer.isClosed
+      } yield (isClosed, isClosedAfterUsed)
+    } shouldBe Right((true, false))
+  }
+
+  "Producer can send messages to a topic" in {
+    withProducer[String].inProgram { producer =>
+      for {
+        _       <- producer.sendToTopic("mytopic", ("key", "mymessage"))
+        message <- FreeS.pure(EmbeddedKafka.consumeFirstStringMessageFrom("mytopic", true))
+      } yield message
+    } shouldBe Right("mymessage")
   }
 
 }

@@ -41,6 +41,7 @@ package object kafka {
       with ProducerConfiguration
       with StreamsConfiguration
       with DefaultSerializers
+      with DefaultDeserializers
 
   object implicits extends Implicits
 

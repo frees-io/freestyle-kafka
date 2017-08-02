@@ -82,6 +82,7 @@ trait ProducerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.trustmanager.algorithm").optional)
       .join(ConfigValueDecoder[Int]("transaction.timeout.ms").optional)
       .join(ConfigValueDecoder[String]("transactional.id").optional)
+      .join(ConfigValueDecoder[String]("zookeeper.connect").optional)
 
   implicit def freestyleKafkaProducerConfig[K, V](
       implicit KS: Serializer[K],
