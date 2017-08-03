@@ -18,16 +18,15 @@ package freestyle
 package kafka
 
 import cats.MonadError
-import cats.implicits._
+import cats.instances.either._
 import freestyle.async.{AsyncContext, Proc}
-import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
+import net.manub.embeddedkafka.EmbeddedKafka
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.Serializer
 import org.scalatest._
 import org.scalatest.concurrent.{ScalaFutures, Waiters}
 
 import scala.concurrent.Promise
-import scala.util.Try
 
 trait FSKafkaAlgebraSpec
     extends EmbeddedKafka
@@ -42,7 +41,7 @@ trait FSKafkaAlgebraSpec
     override def runAsync[A](fa: Proc[A]): Target[A] = {
       val p = Promise[A]()
       fa(_.fold(p.tryFailure, p.trySuccess))
-      Try(p.future.futureValue).toEither
+      MonadError[Target, Throwable].catchNonFatal(p.future.futureValue)
     }
   }
 
