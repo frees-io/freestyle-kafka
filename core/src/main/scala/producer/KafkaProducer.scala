@@ -119,10 +119,15 @@ object producer {
       override protected[this] def send(record: ProducerRecord[K, V]): M[RecordMetadata] = {
         ctx.runAsync { cb =>
           producer
-            .send(record, (metadata: RecordMetadata, exception: Exception) => {
-              if (exception == null) cb(Right(metadata))
-              else cb(Left(exception))
-            })
+            .send(
+              record,
+              new Callback {
+                override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+                  if (exception == null) cb(Right(metadata))
+                  else cb(Left(exception))
+                }
+              }
+            )
         }
       }
 
