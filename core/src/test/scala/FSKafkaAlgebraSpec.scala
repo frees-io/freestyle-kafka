@@ -53,11 +53,6 @@ trait FSKafkaAlgebraSpec
     val p: producer.KafkaProducerProvider[String, V] = producer[String, V]
     val prod: p.Producer[p.Producer.Op]              = p.Producer[p.Producer.Op]
 
-//    val embeddedKafkaConfig: EmbeddedKafkaConfig =
-//      EmbeddedKafkaConfig(kafkaPort = 0, zooKeeperPort = 0)
-
-    //customBrokerProperties = Map("advertised.port" -> "", "advertised.host.name" -> "localhost")
-
     def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] =
       withRunningKafka {
         // println(s"actualConfig: $actualConfig")

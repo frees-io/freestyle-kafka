@@ -46,13 +46,28 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
     } shouldBe Right((true, false))
   }
 
-  "Producer can send messages to a topic" in {
+  "Producer can send a message to a topic" in {
     withProducer[String].inProgram { producer =>
       for {
         _       <- producer.sendToTopic("mytopic", ("key", "mymessage"))
         message <- FreeS.pure(EmbeddedKafka.consumeFirstStringMessageFrom("mytopic", true))
       } yield message
     } shouldBe Right("mymessage")
+  }
+
+  "Producer can send many messages to a topic" in {
+    val records = List("key" -> "mymessage1", "key2" -> "mymessage2")
+    withProducer[String].inProgram { producer =>
+      for {
+        _        <- producer.sendManyToTopic("mytopic", records)
+        messages <- FreeS.pure(EmbeddedKafka.consumeNumberStringMessagesFrom("mytopic", 2, true))
+      } yield messages
+    } shouldBe Right(List("mymessage1", "mymessage2"))
+  }
+
+  "Producer can obtain metrics" in {
+    val records = List("key" -> "mymessage1", "key2" -> "mymessage2")
+    withProducer[String].inProgram { _.metrics }.isRight shouldBe true
   }
 
 }

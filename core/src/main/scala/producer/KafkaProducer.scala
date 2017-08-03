@@ -57,7 +57,7 @@ object producer {
 
       def sendManyToTopic(topic: Topic, records: List[(K, V)]): FS[List[RecordMetadata]]
 
-      def initTransaction(): FS[Unit]
+      def initTransactions(): FS[Unit]
 
       def beginTransaction(): FS[Unit]
 
@@ -138,7 +138,7 @@ object producer {
           records: List[ProducerRecord[K, V]]): M[List[RecordMetadata]] =
         records.traverse(send)
 
-      override protected[this] def initTransaction: M[Unit] =
+      override protected[this] def initTransactions: M[Unit] =
         ME.catchNonFatal(producer.initTransactions())
 
       override protected[this] def beginTransaction: M[Unit] =
