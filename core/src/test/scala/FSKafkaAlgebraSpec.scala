@@ -26,22 +26,16 @@ import org.apache.kafka.common.serialization.Serializer
 import org.scalatest._
 import org.scalatest.concurrent.{ScalaFutures, Waiters}
 
-import scala.concurrent.Promise
-
-trait FSKafkaAlgebraSpec
-    extends EmbeddedKafka
-    with Waiters
-    with ScalaFutures
-    with Matchers
-    with Implicits { self: Suite =>
+trait FSKafkaAlgebraSpec extends EmbeddedKafka with Waiters with Matchers with Implicits {
+  self: Suite =>
 
   type Target[A] = Either[Throwable, A]
 
   implicit val eitherTestAsyncContext: AsyncContext[Target] = new AsyncContext[Target] {
     override def runAsync[A](fa: Proc[A]): Target[A] = {
-      val p = Promise[A]()
-      fa(_.fold(p.tryFailure, p.trySuccess))
-      MonadError[Target, Throwable].catchNonFatal(p.future.futureValue)
+      var result: Target[A] = Left(new IllegalStateException("callback did not return"))
+      fa(_.fold(e => result = Left(e), a => result = Right(a)))
+      result
     }
   }
 
@@ -52,7 +46,7 @@ trait FSKafkaAlgebraSpec
     val p: producer.KafkaProducerProvider[String, V] = producer[String, V]
     val prod: p.Producer[p.Producer.Op]              = p.Producer[p.Producer.Op]
 
-    def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] =
+    def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] = {
       withRunningKafka {
         // println(s"actualConfig: $actualConfig")
         val program = body(prod)
@@ -62,12 +56,13 @@ trait FSKafkaAlgebraSpec
             override def producer: KafkaProducer[String, V] =
               aKafkaProducer.thatSerializesValuesWith(VS.getClass)
           }
+
         val f = program.interpret[Target](
           MonadError[Target, Throwable],
           p.implicits.defaultKafkaProducerHandler[Target])
         f
       }
-
+    }
   }
 
   object withProducer {

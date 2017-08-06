@@ -50,6 +50,7 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
     withProducer[String].inProgram { producer =>
       for {
         _       <- producer.sendToTopic("mytopic", ("key", "mymessage"))
+        _       <- producer.flush()
         message <- FreeS.pure(EmbeddedKafka.consumeFirstStringMessageFrom("mytopic", true))
       } yield message
     } shouldBe Right("mymessage")
@@ -60,6 +61,7 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
     withProducer[String].inProgram { producer =>
       for {
         _        <- producer.sendManyToTopic("mytopic", records)
+        _        <- producer.flush()
         messages <- FreeS.pure(EmbeddedKafka.consumeNumberStringMessagesFrom("mytopic", 2, true))
       } yield messages
     } shouldBe Right(List("mymessage1", "mymessage2"))
