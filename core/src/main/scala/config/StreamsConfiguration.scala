@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.fortysevendeg.kafka.config.implicits
+package freestyle
+package kafka
 
 import cats.implicits._
 import classy._

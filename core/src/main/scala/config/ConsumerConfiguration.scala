@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.fortysevendeg.kafka.config.implicits
+package freestyle
+package kafka
 
 import cats.implicits._
 import classy._
@@ -83,6 +84,7 @@ trait ConsumerConfiguration extends ClassyInstances {
       .join(ConfigValueDecoder[String]("ssl.keymanager.algorithm").optional)
       .join(ConfigValueDecoder[String]("ssl.secure.random.implementation").optional)
       .join(ConfigValueDecoder[String]("ssl.trustmanager.algorithm").optional)
+      .join(ConfigValueDecoder[String]("zookeeper.connect").optional)
 
   implicit val consumerConfig: Decoder[Config, Map[String, Any]] =
     (highPriorityConsumerConfig |@|

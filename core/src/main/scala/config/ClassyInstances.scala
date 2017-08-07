@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.fortysevendeg.kafka.config.implicits
+package freestyle
+package kafka
 
 import classy.Decoder.Join
 import classy.Decoder.Join.instance
