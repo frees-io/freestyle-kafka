@@ -48,7 +48,6 @@ trait FSKafkaAlgebraSpec extends EmbeddedKafka with Waiters with Matchers with I
 
     def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] = {
       withRunningKafka {
-        // println(s"actualConfig: $actualConfig")
         val program = body(prod)
         import freestyle._
         implicit def kafkaProducer: UnderlyingKafkaProducer[String, V] =
