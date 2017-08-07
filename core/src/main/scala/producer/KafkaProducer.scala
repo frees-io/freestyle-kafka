@@ -123,8 +123,6 @@ object producer {
               record,
               new Callback {
                 override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
-                  println(
-                    s"onCompletion invoked with metadata: $metadata,  and exception: $exception")
                   if (exception == null) cb(Right(metadata))
                   else cb(Left(exception))
                 }
