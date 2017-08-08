@@ -18,7 +18,7 @@ package freestyle
 package kafka
 
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import cats.MonadError
 import cats.implicits._
@@ -80,8 +80,8 @@ object producer {
       private val atomicProducer: AtomicReference[KafkaProducer[K, V]] =
         new AtomicReference(underlying.producer)
 
-      private val producerClosedState: AtomicReference[Boolean] =
-        new AtomicReference(false)
+      private val producerClosedState: AtomicBoolean =
+        new AtomicBoolean
 
       def producer: KafkaProducer[K, V] = {
         if (producerClosedState.get()) {
