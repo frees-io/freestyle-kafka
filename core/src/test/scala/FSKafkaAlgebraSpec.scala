@@ -74,7 +74,7 @@ trait FSKafkaAlgebraSpec
     val prod: p.Producer[p.Producer.Op] = p.Producer[p.Producer.Op]
     type ProducerType = producer.KafkaProducerProvider[String, V]#Producer[p.Producer.Op]
 
-    def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] = {
+    def apply[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] = {
       val program = body(prod)
       program.interpret[Target]
     }
@@ -91,7 +91,7 @@ trait FSKafkaAlgebraSpec
     val cons: c.Consumer[c.Consumer.Op] = c.Consumer[c.Consumer.Op]
     type ConsumerType = consumer.KafkaConsumerProvider[String, V]#Consumer[c.Consumer.Op]
 
-    def inProgram[A](body: (ConsumerType) => FreeS[c.Consumer.Op, A]): Target[A] = {
+    def apply[A](body: (ConsumerType) => FreeS[c.Consumer.Op, A]): Target[A] = {
       val program = body(cons)
       program.interpret[Target]
     }
@@ -119,9 +119,9 @@ trait FSKafkaAlgebraSpec
     type ProducerType = producer.KafkaProducerProvider[String, V]#Producer[ConsumerAndProducer.Op]
     val cp = ConsumerAndProducer[ConsumerAndProducer.Op]
 
-    def inProgram[A](
-        body: (ConsumerType, ProducerType) => FreeS[ConsumerAndProducer.Op, A]): Target[A] = {
-      val program = body(cp.consumer, cp.producer)
+    def apply[A](
+        body: (ProducerType, ConsumerType) => FreeS[ConsumerAndProducer.Op, A]): Target[A] = {
+      val program = body(cp.producer, cp.consumer)
       program.interpret[Target]
     }
   }

@@ -25,7 +25,7 @@ import scala.concurrent.duration._
 class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
 
   "Producer can be reused after closed" in {
-    withProducer[String].inProgram { producer =>
+    withProducer[String].apply { producer =>
       for {
         _                 <- producer.close()
         isClosed          <- producer.isClosed
@@ -36,7 +36,7 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
   }
 
   "Producer can be reused after closed with a timeout" in {
-    withProducer[String].inProgram { producer =>
+    withProducer[String].apply { producer =>
       for {
         _                 <- producer.closeWaitingFor(5.seconds)
         isClosed          <- producer.isClosed
@@ -47,7 +47,7 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
   }
 
   "Producer can send a message to a topic" in {
-    withProducer[String].inProgram { producer =>
+    withProducer[String].apply { producer =>
       for {
         _       <- producer.sendToTopic("mytopic", ("key", "mymessage"))
         _       <- producer.flush()
@@ -58,7 +58,7 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
 
   "Producer can send many messages to a topic" in {
     val records = List("key" -> "mymessage1", "key2" -> "mymessage2")
-    withProducer[String].inProgram { producer =>
+    withProducer[String].apply { producer =>
       for {
         _        <- producer.sendManyToTopic("mytopic", records)
         _        <- producer.flush()
@@ -69,7 +69,7 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
 
   "Producer can obtain metrics" in {
     val records = List("key" -> "mymessage1", "key2" -> "mymessage2")
-    withProducer[String].inProgram { _.metrics }.isRight shouldBe true
+    withProducer[String].apply { _.metrics }.isRight shouldBe true
   }
 
 }

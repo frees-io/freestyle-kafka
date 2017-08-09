@@ -139,11 +139,14 @@ object consumer {
         ME: MonadError[M, Throwable])
         extends Consumer.Handler[M] {
 
+      private[this] val cachedConsumer = underlying.consumer
+
       def consumer: KafkaConsumer[K, V] = {
         if (consumerClosedState.get()) {
-          underlying.consumer.wakeup()
+          cachedConsumer.wakeup()
+          consumerClosedState.set(false)
         }
-        underlying.consumer
+        cachedConsumer
       }
 
       private val consumerClosedState: AtomicBoolean =
