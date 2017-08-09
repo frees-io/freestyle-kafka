@@ -18,7 +18,7 @@ package freestyle
 package kafka
 
 import cats.MonadError
-import cats.instances.either._
+import cats.implicits._
 import freestyle.async.{AsyncContext, Proc}
 import net.manub.embeddedkafka.EmbeddedKafka
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -26,6 +26,8 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest._
 import org.scalatest.concurrent.{ScalaFutures, Waiters}
+import freestyle._
+import freestyle.implicits._
 
 trait FSKafkaAlgebraSpec
     extends EmbeddedKafka
@@ -51,25 +53,30 @@ trait FSKafkaAlgebraSpec
     }
   }
 
+  implicit def underlyingKafkaProducer[V](
+      implicit VS: Serializer[V]): UnderlyingKafkaProducer[String, V] =
+    new UnderlyingKafkaProducer[String, V] {
+      override def producer: KafkaProducer[String, V] =
+        aKafkaProducer.thatSerializesValuesWith(VS.getClass)
+    }
+
+  implicit def underlyingKafkaConsumer[V](
+      implicit VS: Deserializer[V]): UnderlyingKafkaConsumer[String, V] =
+    new UnderlyingKafkaConsumer[String, V] {
+      override def consumer: KafkaConsumer[String, V] =
+        kafkaConsumer[String, V]
+    }
+
   class withProducer[V](implicit VS: Serializer[V]) {
 
     val p: producer.KafkaProducerProvider[String, V] = producer[String, V]
-    val prod: p.Producer[p.Producer.Op]              = p.Producer[p.Producer.Op]
+    import p.implicits._
+    val prod: p.Producer[p.Producer.Op] = p.Producer[p.Producer.Op]
     type ProducerType = producer.KafkaProducerProvider[String, V]#Producer[p.Producer.Op]
 
     def inProgram[A](body: (ProducerType) => FreeS[p.Producer.Op, A]): Target[A] = {
       val program = body(prod)
-      import freestyle._
-      implicit def kafkaProducer: UnderlyingKafkaProducer[String, V] =
-        new UnderlyingKafkaProducer[String, V] {
-          override def producer: KafkaProducer[String, V] =
-            aKafkaProducer.thatSerializesValuesWith(VS.getClass)
-        }
-
-      val f = program.interpret[Target](
-        MonadError[Target, Throwable],
-        p.implicits.defaultKafkaProducerHandler[Target])
-      f
+      program.interpret[Target]
     }
   }
 
@@ -79,28 +86,49 @@ trait FSKafkaAlgebraSpec
 
   class withConsumer[V](implicit VS: Deserializer[V]) {
 
-    val p: consumer.KafkaConsumerProvider[String, V] = consumer[String, V]
-    val prod: p.Consumer[p.Consumer.Op]              = p.Consumer[p.Consumer.Op]
-    type ConsumerType = consumer.KafkaConsumerProvider[String, V]#Consumer[p.Consumer.Op]
+    val c: consumer.KafkaConsumerProvider[String, V] = consumer[String, V]
+    import c.implicits._
+    val cons: c.Consumer[c.Consumer.Op] = c.Consumer[c.Consumer.Op]
+    type ConsumerType = consumer.KafkaConsumerProvider[String, V]#Consumer[c.Consumer.Op]
 
-    def inProgram[A](body: (ConsumerType) => FreeS[p.Consumer.Op, A]): Target[A] = {
-      val program = body(prod)
-      import freestyle._
-      implicit def underlyingKafkaConsumer: UnderlyingKafkaConsumer[String, V] =
-        new UnderlyingKafkaConsumer[String, V] {
-          override def consumer: KafkaConsumer[String, V] =
-            kafkaConsumer[String, V]
-        }
-
-      val f = program.interpret[Target](
-        MonadError[Target, Throwable],
-        p.implicits.defaultKafkaConsumerHandler[Target])
-      f
+    def inProgram[A](body: (ConsumerType) => FreeS[c.Consumer.Op, A]): Target[A] = {
+      val program = body(cons)
+      program.interpret[Target]
     }
   }
 
   object withConsumer {
     def apply[V](implicit VD: Deserializer[V]) = new withConsumer[V]()
+  }
+
+  class withProducerAndConsumer[V](implicit VS: Serializer[V], VD: Deserializer[V]) {
+
+    val c: consumer.KafkaConsumerProvider[String, V] = consumer[String, V]
+    val p: producer.KafkaProducerProvider[String, V] = producer[String, V]
+
+    import c.implicits._
+    import p.implicits._
+
+    @module
+    trait ConsumerAndProducer {
+      val consumer: c.Consumer
+      val producer: p.Producer
+    }
+
+    type ConsumerType = consumer.KafkaConsumerProvider[String, V]#Consumer[ConsumerAndProducer.Op]
+    type ProducerType = producer.KafkaProducerProvider[String, V]#Producer[ConsumerAndProducer.Op]
+    val cp = ConsumerAndProducer[ConsumerAndProducer.Op]
+
+    def inProgram[A](
+        body: (ConsumerType, ProducerType) => FreeS[ConsumerAndProducer.Op, A]): Target[A] = {
+      val program = body(cp.consumer, cp.producer)
+      program.interpret[Target]
+    }
+  }
+
+  object withProducerAndConsumer {
+    def apply[V](implicit VS: Serializer[V], VD: Deserializer[V]) =
+      new withProducerAndConsumer[V]()
   }
 
 }
