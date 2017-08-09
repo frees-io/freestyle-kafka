@@ -76,4 +76,8 @@ class KafkaConsumerSpec extends WordSpec with FSKafkaAlgebraSpec {
     } shouldBe Right(Some("mymessage"))
   }
 
+  "Consumer can obtain metrics" in {
+    withProducer[String].apply { _.metrics }.isRight shouldBe true
+  }
+
 }

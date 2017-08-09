@@ -68,7 +68,6 @@ class KafkaProducerSpec extends WordSpec with FSKafkaAlgebraSpec {
   }
 
   "Producer can obtain metrics" in {
-    val records = List("key" -> "mymessage1", "key2" -> "mymessage2")
     withProducer[String].apply { _.metrics }.isRight shouldBe true
   }
 
