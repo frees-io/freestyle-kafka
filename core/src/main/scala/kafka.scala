@@ -36,12 +36,7 @@ package object kafka {
       new ProducerRecord[K, V](topic, t._1, t._2)
   }
 
-  trait Implicits
-      extends ConsumerConfiguration
-      with ProducerConfiguration
-      with StreamsConfiguration
-      with DefaultSerializers
-      with DefaultDeserializers
+  trait Implicits extends DefaultSerializers with DefaultDeserializers
 
   object implicits extends Implicits
 
