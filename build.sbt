@@ -3,26 +3,27 @@ pgpPublicRing := file(s"$gpgFolder/pubring.gpg")
 pgpSecretRing := file(s"$gpgFolder/secring.gpg")
 
 lazy val commonDependencies: Seq[ModuleID] = Seq(
-  %%("cats-core", "1.0.0-MF"),
-  %%("frees-async"),
-  %%("frees-config"),
+  %%("cats-core", "1.0.0-MF") force(),
+  %%("frees-async", "0.4.3"),
+  %%("frees-config", "0.4.3"),
   %("kafka-clients"),
-  %("kafka-streams"))
+  %("kafka-streams"),
+  ("com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.5").exclude("org.typelevel", "cats-effect"))
 
 lazy val testDependencies: Seq[ModuleID] = Seq(
-  %%("scalatest")          % "test",
-  %%("scalamockScalatest") % "test",
-  %%("scalacheck")         % "test",
-  "org.slf4j"              % "slf4j-api" % "1.7.25" % "test",
-  "org.slf4j"              % "log4j-over-slf4j" % "1.7.25" % "test",
-  "ch.qos.logback"         % "logback-classic" % "1.2.3" % "test",
-  "net.manub"              %% "scalatest-embedded-kafka" % "1.0.0" % "test",
-  "net.manub"              %% "scalatest-embedded-kafka-streams" % "1.0.0" % "test"
+  %%("scalatest")                        % "test",
+  %%("scalamockScalatest")               % "test",
+  %%("scalacheck")                       % "test",
+  %("slf4j-api")                         % "test",
+  %("log4j-over-slf4j")                  % "test",
+  %("logback-classic")                   % "test",
+  %%("scalatest-embedded-kafka")         % "test",
+  %%("scalatest-embedded-kafka-streams") % "test",
 )
 
 lazy val root = project
   .in(file("."))
-  .settings(name := "freestyle-kafka")
+  .settings(name := "frees-kafka")
   .settings(noPublishSettings)
   .settings(scalaMetaSettings)
   .dependsOn(core)
@@ -30,7 +31,7 @@ lazy val root = project
 
 lazy val core = project
   .in(file("core"))
-  .settings(moduleName := "freestyle-kafka-core")
+  .settings(moduleName := "frees-kafka-core")
   .settings(scalaMetaSettings)
   .settings(parallelExecution in Test := false)
   .settings(libraryDependencies ++= commonDependencies)

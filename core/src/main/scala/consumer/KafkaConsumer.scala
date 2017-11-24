@@ -200,7 +200,8 @@ object consumer {
       override protected[this] def commitAsync: M[Unit] =
         ME.catchNonFatal(consumer.commitAsync())
 
-      override protected[this] def commitAsyncWithResult: M[Map[TopicPartition, OffsetAndMetadata]] =
+      override protected[this] def commitAsyncWithResult: M[
+        Map[TopicPartition, OffsetAndMetadata]] =
         ctx.runAsync { cb =>
           consumer.commitAsync(new AsyncOffsetCommitCallback(cb))
         }
