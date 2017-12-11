@@ -3,12 +3,11 @@ pgpPublicRing := file(s"$gpgFolder/pubring.gpg")
 pgpSecretRing := file(s"$gpgFolder/secring.gpg")
 
 lazy val commonDependencies: Seq[ModuleID] = Seq(
-  %%("cats-core", "1.0.0-MF") force(),
-  %%("frees-async", "0.4.3"),
-  %%("frees-config", "0.4.3"),
+  %%("cats-core"),
+  %%("frees-async"),
+  %%("frees-config"),
   %("kafka-clients"),
-  %("kafka-streams"),
-  ("com.github.zainab-ali" %% "fs2-reactive-streams" % "0.2.5").exclude("org.typelevel", "cats-effect"))
+  %("kafka-streams"))
 
 lazy val testDependencies: Seq[ModuleID] = Seq(
   %%("scalatest")                        % "test",
