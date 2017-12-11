@@ -51,7 +51,11 @@ object processorImpl {
   }
 
   def enrich(processorAlg: ProcessorAlg, members: Seq[Stat]): Seq[Stat] =
-    members ++ Seq(processorAlg.publisher, processorAlg.publisherInstance)
+    members ++ Seq(
+      processorAlg.publisher,
+      processorAlg.subscriber,
+      processorAlg.publisherInstance,
+      processorAlg.subscriberInstance)
 
 }
 
@@ -65,7 +69,8 @@ case class ProcessorAlg(defn: Defn) {
   val wartSuppress =
     mod"""@_root_.java.lang.SuppressWarnings(_root_.scala.Array("org.wartremover.warts.DefaultArguments"))"""
 
-  val publisherName: Type.Name = Type.Name("Publisher")
+  val publisherName: Type.Name  = Type.Name("Publisher")
+  val subscriberName: Type.Name = Type.Name("Subscriber")
 
   private[this] def paramTpe(param: Term.Param): Type = {
     val Term.Param(_, paramname, Some(ptpe), _) = param
@@ -74,9 +79,11 @@ case class ProcessorAlg(defn: Defn) {
   }
 
   // format: OFF
-  val modes: List[KafkaPublisher] = template.stats.toList.flatten.collect {
+  val modes: List[KafkaProcessor] = template.stats.toList.flatten.collect {
     case q"@publisher($s) def $name[..$tparams]($request): FS[$response]" =>
-      KafkaPublisher(algName, s, name, paramTpe(request), response)
+      KafkaPublisher(s, name, paramTpe(request), response)
+    case q"@subscriber($s) def $name[..$tparams]($request): FS[$response]" =>
+      KafkaSubscriber(s, name, paramTpe(request), response)
     case e => throw new MatchError("Unmatched freestyle-kafka method: " + e.toString())
   }
   // format: ON
@@ -86,12 +93,30 @@ case class ProcessorAlg(defn: Defn) {
   }
 
   val publisher: Class = {
-    val publisherDefs: Seq[Defn.Def] = modes.map(_.publisherDef)
+    val processorDefs: Seq[Defn.Def] = modes.map {
+      case p: KafkaPublisher  => p.publisherDef
+      case p: KafkaSubscriber => p.subscriberDef
+    }
+
     q"""
        $wartSuppress
        class $publisherName[M[_]](topic: String) {
-          ..$publisherDefs
+          ..$processorDefs
        }
+     """
+  }
+
+  val subscriber: Class = {
+    val processorDefs: Seq[Defn.Def] = modes.map {
+      case p: KafkaPublisher  => p.publisherDef
+      case p: KafkaSubscriber => p.subscriberDef
+    }
+
+    q"""
+       $wartSuppress
+        class $subscriberName[M[_]](topic: String) {
+            ..$processorDefs
+        }
      """
   }
 
@@ -103,19 +128,40 @@ case class ProcessorAlg(defn: Defn) {
      """
   }
 
+  val subscriberInstance: Defn.Def = {
+    q"""
+       $wartSuppress
+       def subscriber[M[_]](topic: String): $subscriberName[M] =
+             new ${subscriberName.ctorRef(Ctor.Name(subscriberName.value))}[M](topic)
+     """
+  }
+
 }
 
-private[internal] case class KafkaPublisher(
-    algName: Type.Name,
+private[internal] sealed abstract class KafkaProcessor
+
+private[internal] case class KafkaSubscriber(
     topicName: Term.Arg,
     name: Term.Name,
     requestType: Type,
-    responseType: Type) {
+    responseType: Type)
+    extends KafkaProcessor {
 
-  val wartSuppress =
-    mod"""@_root_.java.lang.SuppressWarnings(_root_.scala.Array("org.wartremover.warts.Null"))"""
+  val subscriberDef: Defn.Def =
+    q"""
+         def $name(b: $requestType)(implicit A: Applicative[M]): M[$responseType] = {
+           println($topicName)
+           A.pure(println(s"######## testing subscriberDef"))
+         }
+       """
+}
 
-  val descriptorName: Term.Name = name.copy(value = name.value + "MethodDescriptor")
+private[internal] case class KafkaPublisher(
+    topicName: Term.Arg,
+    name: Term.Name,
+    requestType: Type,
+    responseType: Type)
+    extends KafkaProcessor {
 
   val publisherDef: Defn.Def =
     q"""

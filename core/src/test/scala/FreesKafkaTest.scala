@@ -17,7 +17,7 @@
 package freestyle.kafka
 
 import freestyle._
-import freestyle.kafka.Utils.clientProgram.MyKafkaPublisher
+import freestyle.kafka.Utils.processor.FreesKafkaProcessor
 import org.scalatest._
 
 class FreesKafkaTests extends WordSpec with Matchers {
@@ -30,10 +30,24 @@ class FreesKafkaTests extends WordSpec with Matchers {
 
     "macro defined function works" in {
 
-      def clientProgram[M[_]](implicit APP: MyKafkaPublisher[M]): FreeS[M, Unit] =
+      def clientProgram[M[_]](implicit APP: FreesKafkaProcessor[M]): FreeS[M, Unit] =
         APP.objectDispatcher(true)
 
-      clientProgram[MyKafkaPublisher.Op].runF shouldBe (())
+      clientProgram[FreesKafkaProcessor.Op].runF shouldBe (())
+
+    }
+  }
+
+  "frees-kafka subscriber" should {
+
+    import freestyle.kafka.implicits._
+
+    "macro defined function works" in {
+
+      def clientProgram[M[_]](implicit APP: FreesKafkaProcessor[M]): FreeS[M, Unit] =
+        APP.objectFetcher(true)
+
+      clientProgram[FreesKafkaProcessor.Op].runF shouldBe (())
 
     }
   }

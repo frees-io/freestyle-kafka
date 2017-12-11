@@ -18,9 +18,8 @@ package freestyle.kafka
 
 import cats.Applicative
 import freestyle.free
-import freestyle.kafka.Utils.clientProgram.MyKafkaPublisher
 import freestyle.kafka.Utils.processor.FreesKafkaProcessor
-import freestyle.kafka.protocol.{processor, publisher}
+import freestyle.kafka.protocol.{processor, publisher, subscriber}
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
@@ -33,9 +32,9 @@ object Utils {
     @processor
     trait FreesKafkaProcessor {
 
-      @publisher("test") def objectDispatcher(b: Boolean): FS[Unit]
+      @publisher("test publisher") def objectDispatcher(b: Boolean): FS[Unit]
 
-      //@subscriber("test") def objectFetcher(a: Boolean): FS[Unit]
+      @subscriber("test subscriber") def objectFetcher(a: Boolean): FS[Unit]
     }
 
   }
@@ -44,24 +43,19 @@ object Utils {
 
     object processor {
 
-      class FreesKafkaProcessorPublisherHandler[F[_]: Applicative](
-          implicit publisher: FreesKafkaProcessor.Publisher[F])
-          extends MyKafkaPublisher.Handler[F] {
+      class FreesKafkaProcessorHandler[F[_]: Applicative](
+          implicit
+          publisher: FreesKafkaProcessor.Publisher[F],
+          subscriber: FreesKafkaProcessor.Subscriber[F])
+          extends FreesKafkaProcessor.Handler[F] {
 
         override protected[this] def objectDispatcher(b: Boolean): F[Unit] =
           publisher.objectDispatcher(b)
 
+        override protected[this] def objectFetcher(b: Boolean): F[Unit] =
+          subscriber.objectFetcher(b)
+
       }
-
-    }
-
-  }
-
-  object clientProgram {
-
-    @free
-    trait MyKafkaPublisher {
-      def objectDispatcher(b: Boolean): FS[Unit]
     }
 
   }
@@ -78,8 +72,11 @@ object Utils {
     implicit val freesKafkaPublisher: FreesKafkaProcessor.Publisher[Future] =
       FreesKafkaProcessor.publisher[Future]("test")
 
-    implicit val freesKafkaPublisherHandler: FreesKafkaProcessorPublisherHandler[Future] =
-      new FreesKafkaProcessorPublisherHandler[Future]
+    implicit val freesKafkaSubscriber: FreesKafkaProcessor.Subscriber[Future] =
+      FreesKafkaProcessor.subscriber[Future]("test")
+
+    implicit val freesKafkaPublisherHandler: FreesKafkaProcessorHandler[Future] =
+      new FreesKafkaProcessorHandler[Future]
 
     implicit class InterpreterOps[F[_], A](fs: FreeS[F, A])(implicit H: FSHandler[F, Future]) {
 
