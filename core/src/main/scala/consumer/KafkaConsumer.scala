@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 47 Degrees, LLC. <http://www.47deg.com>
+ * Copyright 2017-2018 47 Degrees, LLC. <http://www.47deg.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicReference}
 
 import cats.MonadError
 import cats.implicits._
+import freestyle.free._
 import freestyle.async.AsyncContext
 import org.apache.kafka.clients.consumer._
 import org.apache.kafka.common.{Metric, MetricName, PartitionInfo, TopicPartition}
@@ -200,7 +201,8 @@ object consumer {
       override protected[this] def commitAsync: M[Unit] =
         ME.catchNonFatal(consumer.commitAsync())
 
-      override protected[this] def commitAsyncWithResult: M[Map[TopicPartition, OffsetAndMetadata]] =
+      override protected[this] def commitAsyncWithResult: M[
+        Map[TopicPartition, OffsetAndMetadata]] =
         ctx.runAsync { cb =>
           consumer.commitAsync(new AsyncOffsetCommitCallback(cb))
         }

@@ -2,10 +2,12 @@ pgpPassphrase := Some(getEnvVar("PGP_PASSPHRASE").getOrElse("").toCharArray)
 pgpPublicRing := file(s"$gpgFolder/pubring.gpg")
 pgpSecretRing := file(s"$gpgFolder/secring.gpg")
 
+lazy val freesV = "0.5.1"
+
 lazy val commonDependencies: Seq[ModuleID] = Seq(
-  %%("cats-core", "1.0.0-MF"),
-  %%("frees-async"),
-  %%("frees-config"),
+  %%("cats-core"),
+  %%("frees-async",freesV),
+  %%("frees-config",freesV),
   %("kafka-clients"),
   %("kafka-streams"))
 

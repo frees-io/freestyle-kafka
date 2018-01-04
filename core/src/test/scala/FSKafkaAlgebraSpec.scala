@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 47 Degrees, LLC. <http://www.47deg.com>
+ * Copyright 2017-2018 47 Degrees, LLC. <http://www.47deg.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ package kafka
 
 import cats.MonadError
 import cats.implicits._
-import freestyle.async.{AsyncContext, Proc}
+import freestyle.async._
+import freestyle.free.async._
 import net.manub.embeddedkafka.EmbeddedKafka
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest._
 import org.scalatest.concurrent.{ScalaFutures, Waiters}
-import freestyle._
-import freestyle.implicits._
+import freestyle.free._
 
 trait FSKafkaAlgebraSpec
     extends EmbeddedKafka
@@ -106,6 +106,7 @@ trait FSKafkaAlgebraSpec
     val c: consumer.KafkaConsumerProvider[String, V] = consumer[String, V]
     val p: producer.KafkaProducerProvider[String, V] = producer[String, V]
 
+    import freestyle.free.implicits._
     import c.implicits._
     import p.implicits._
 
